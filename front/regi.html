@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="regi.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css"
+        integrity="sha512-rqQltXRuHxtPWhktpAZxLHUVJ3Eombn3hvk9PHjV/N5DMUYnzKPC1i3ub0mEXgFzsaZNeJcoE0YHq0j/GFsdGg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>SignUp Page</title>
+</head>
+
+<body>
+    <div class="first-container">
+        <div class="mid-container">
+            <h2>가입할 아이디 비밀번호를 입력!</h2>
+            <div class="mid-content">
+
+                <div class="mid-inputs">
+                    <input id="signupid" placeholder="가입할 ID를 입력" />
+                    <input id="signuppass" type="password" placeholder="가입할 PASSWD를 입력" />
+                </div>
+                <div class="line-content"></div>
+                <div class="buttons-content">
+                    <button id="signupButton">회원가입</button>
+                    <button id="goback">뒤로가기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="clear:both;"></div>
+
+    <script>
+        // 뒤로가기 버튼 이벤트
+        document.getElementById('goback').addEventListener('click', function () {
+            history.back(); // 뒤로가기
+        });
+
+        // 회원가입 버튼 클릭 이벤트
+        document.getElementById('signupButton').addEventListener('click', async function () {
+            const userId = document.getElementById('signupid').value.trim();
+            const userPassword = document.getElementById('signuppass').value.trim();
+
+            // 인풋에 값이 없으면 경고 출력
+            if (userId === '' || userPassword === '') {
+                alert('입력한 정보를 다시 확인하세요.');
+                return;
+            }
+
+            try {
+                // 서버로 회원가입 요청
+                const response = await fetch('/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, userPassword }),
+                });
+
+                if (response.ok) {
+                    alert('회원가입 성공! 로그인 페이지로 이동합니다.');
+                    window.location.href = 'index.html'; // 로그인 페이지로 리다이렉트
+                } else {
+                    const errorMsg = await response.text();
+                    alert(`회원가입 실패: ${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('에러 발생:', error);
+                alert('서버와 연결할 수 없습니다. 나중에 다시 시도하세요.');
+            }
+        });
+    </script>
+</body>
+
+</html>

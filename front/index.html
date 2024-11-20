@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/all.min.css"
+        integrity="sha512-rqQltXRuHxtPWhktpAZxLHUVJ3Eombn3hvk9PHjV/N5DMUYnzKPC1i3ub0mEXgFzsaZNeJcoE0YHq0j/GFsdGg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Login Page</title>
+</head>
+
+<body>
+    <div class="first-container">
+        <div class="mid-container">
+            <h2>로그인</h2>
+            <div class="mid-content">
+                <div class="mid-inputs">
+                    <input id="userId" placeholder="ID를 입력" />
+                    <input id="userPassword" placeholder="PASSWD를 입력" type="password" />
+                </div>
+                <div class="line-content"></div>
+                <div class="buttons-content">
+                    <button id="loginButton">로그인</button>
+                    <button id="signupButton">회원가입</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="clear:both;"></div>
+
+    <script>
+        // 페이지 로드 또는 캐시 복원 시 세션 스토리지 확인
+        window.addEventListener('pageshow', function () {
+            const userId = sessionStorage.getItem('userId');
+            if (userId) {
+                // 세션 스토리지에 userId가 있으면 메인 페이지로 강제 이동
+                alert('이미 로그인된 사용자입니다. 메인 페이지로 이동합니다.');
+                window.location.href = 'main.html';
+            }
+        });
+
+        // 회원가입 버튼 클릭 시 regi.html로 이동
+        document.getElementById('signupButton').addEventListener('click', function () {
+            window.location.href = 'regi.html';
+        });
+
+        // 로그인 요청 처리 함수
+        const handleLogin = async () => {
+            const userId = document.getElementById('userId').value.trim();
+            const userPassword = document.getElementById('userPassword').value.trim();
+
+            // 입력 값 확인
+            if (userId === '' || userPassword === '') {
+                alert('아이디와 비밀번호를 입력하세요.');
+                return;
+            }
+
+            try {
+                // 서버로 로그인 요청
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, userPassword }),
+                });
+
+                if (response.ok) {
+                    // 로그인 성공 시 세션 스토리지에 아이디 저장
+                    sessionStorage.setItem('userId', userId);
+                    alert('로그인 성공!');
+                    window.location.href = 'main.html'; // 메인 페이지로 이동
+                } else {
+                    const errorMsg = await response.text();
+                    alert(`로그인 실패: ${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('에러 발생:', error);
+                alert('서버와 연결할 수 없습니다. 나중에 다시 시도하세요.');
+            }
+        };
+
+        // 로그인 버튼 클릭 시 로그인 처리
+        document.getElementById('loginButton').addEventListener('click', handleLogin);
+
+        // Enter 키 입력 시 로그인 처리
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                handleLogin();
+            }
+        });
+    </script>
+
+</body>
+
+</html>
