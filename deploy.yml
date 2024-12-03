@@ -1,0 +1,125 @@
+# Deployment 리소스: 애플리케이션 Pod 정의
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app  # Deployment 이름
+spec:
+  replicas: 1  # 복제본 개수
+  selector:
+    matchLabels:
+      app: my-app  # Pod을 선택할 레이블
+  template:
+    metadata:
+      labels:
+        app: my-app  # Pod에 부여할 레이블
+    spec:
+      containers:
+        # Node.js 컨테이너
+        - name: node-app
+          image: wonjune95/diamond:node-app-v1  # Node.js 컨테이너 이미지
+          ports:
+            - containerPort: 3000  # Node.js 컨테이너에서 사용할 포트
+          volumeMounts:
+            # 정적 파일 볼륨 마운트
+            - name: static-files
+              mountPath: /usr/share/nginx/html  # 정적 파일 경로
+
+        # Nginx 컨테이너
+        - name: nginx
+          image: wonjune95/diamond:nginx-app-v1  # Nginx 컨테이너 이미지
+          ports:
+            - containerPort: 80  # Nginx 컨테이너에서 사용할 포트
+          volumeMounts:
+            # 정적 파일 볼륨 마운트
+            - name: static-files
+              mountPath: /usr/share/nginx/html  # 정적 파일 경로
+            # Nginx 설정 파일 볼륨 마운트
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf  # 설정 파일 경로
+              subPath: nginx.conf  # ConfigMap의 특정 파일만 마운트
+
+      # Pod 전체에 사용되는 볼륨 정의
+      volumes:
+        # 정적 파일 저장을 위한 EmptyDir 볼륨
+        - name: static-files
+          emptyDir: {}  # Pod 수명 동안만 유지되는 임시 디렉토리
+        # Nginx 설정 파일을 제공하는 ConfigMap 볼륨
+        - name: nginx-config
+          configMap:
+            name: nginx-config  # ConfigMap 이름
+
+---
+# ConfigMap 리소스: Nginx 설정 파일 관리
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config  # ConfigMap 이름
+data:
+  nginx.conf: |  # Nginx 설정 파일
+    worker_processes auto;
+
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        include /etc/nginx/mime.types;  # MIME 타입 정의
+        default_type application/octet-stream;
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+
+
+        server {
+            listen 80;  # Nginx가 수신 대기할 포트
+            server_name localhost;  # 서버 이름
+
+            # 기본 정적 파일 경로 설정
+            location / {
+                root /usr/share/nginx/html/front;  # 정적 파일 경로
+                index index.html;  # 기본 파일
+            }
+
+            # /api 요청을 Node.js 컨테이너로 프록시
+            location /api/ {
+                proxy_pass http://localhost:3000;  # Node.js 서버로 요청 전달
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_cache_bypass $http_upgrade;
+            }
+            # 에러 페이지
+            error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+              root /usr/share/nginx/html;
+        }
+        }
+    }
+
+---
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: my-app-svc  # 서비스 이름 수정
+# spec:
+#   selector:
+#     app: my-app  # Deployment와 동일한 라벨 값
+#   ports:
+#   - protocol: TCP
+#     port: 80
+#     targetPort: 80
+#   type: LoadBalancer  # 외부 접근을 위해 LoadBalancer 타입
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-app-svc  # 서비스 이름
+spec:
+  selector:
+    app: my-app  # Service가 트래픽을 라우팅할 Pod
+  ports:
+    - protocol: TCP  # 네트워크 프로토콜
+      port: 80  # 외부에서 접근할 포트
+      targetPort: 80  # Pod 내부의 컨테이너 포트
+      nodePort: 30080  # 고정된 NodePort 설정
+  type: NodePort  # NodePort 서비스 타입

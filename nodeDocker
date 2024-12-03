@@ -1,0 +1,20 @@
+# Node.js 빌드 및 실행
+FROM node:16.20.2
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# package.json 및 package-lock.json 복사
+COPY package.json package-lock.json ./
+
+# 종속성 설치
+RUN npm install --save
+
+# 애플리케이션 파일 복사
+COPY . .
+
+# 포트 노출
+EXPOSE 3000
+
+# 애플리케이션 실행
+CMD ["node", "server.js"]

@@ -31,6 +31,7 @@
     <div style="clear:both;"></div>
 
     <script>
+        console.log("index.html 잘들어옴")
         // 페이지 로드 또는 캐시 복원 시 세션 스토리지 확인
         window.addEventListener('pageshow', function () {
             const userId = sessionStorage.getItem('userId');
@@ -59,7 +60,7 @@
 
             try {
                 // 서버로 로그인 요청
-                const response = await fetch('/login', {
+                const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
